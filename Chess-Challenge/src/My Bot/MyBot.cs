@@ -17,17 +17,26 @@ public class MyBot : IChessBot
         _repetitions = new HashSet<ulong>();
     }
 
-    int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
+    //int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
+    int[] pieceValues_mg = { 0, 106, 377, 394, 492, 977, 0 };
+    int[] pieceValues_eg = { 0, 127, 412, 441, 767, 1468, 0 };
 
-    // PSTs are encoded with the following format:
-    // Every rank or file is encoded as a byte, with the first rank/file being the LSB and the last rank/file being the MSB.
-    // For every value to fit inside a byte, the values are divided by 2, and multiplication inside evaluation is needed.
-    ulong[] pstRanks = {0, 32973249741911296, 16357091511995071475, 17581496622553367027, 724241724997039354, 432919517870226424, 17729000522595302646 };
-    ulong[] pstFiles = {0, 17944594909985834239, 17438231369917791979, 17799354947352068342, 17580088143863153148, 217585671819360496, 17944030877684269297 };
+    // ulong[] pstRanks = {0, 32973249741911296, 16357091511995071475, 17581496622553367027, 724241724997039354, 432919517870226424, 17729000522595302646 };
+    // ulong[] pstFiles = {0, 17944594909985834239, 17438231369917791979, 17799354947352068342, 17580088143863153148, 217585671819360496, 17944030877684269297 };
+
+    ulong[] pstRanks_mg = {0, 5510442908928, 17655810405777276154, 17870852881347903483, 577872525182893310, 360010893225885950, 144967305225175040 };
+    ulong[] pstRanks_eg = {0, 2203318157312, 18446463715491446523, 1108135182077, 72621647814655486, 290204025343506421, 18158797384476327931 };
+
+    ulong[] pstFiles_mg = {0, 18303475513898827774, 18302913667768909562, 18375249429625110781, 18375251632960045055, 144960712534392573, 72619427232547326 };
+    ulong[] pstFiles_eg = {0, 4278190336, 18230290929066115069, 18374406112830030078, 18374687574888349952, 3311436627707, 18230572399731015677 };
+
+    int[] piecePhases = {0, 0, 1, 1, 2, 4, 0}; // Max phase = 24
 
     private int Evaluate(Board board)
     {
-        int score = 0;
+        int score_mg = 0;
+        int score_eg = 0;
+        int phase = 0;
         for (var color = 0; color < 2; color++)
         {
             var isWhite = color == 0;
@@ -37,7 +46,8 @@ public class MyBot : IChessBot
                 var bitboard = board.GetPieceBitboard(piece, isWhite);
 
                 while (bitboard != 0)
-                {
+                {   
+                    phase += piecePhases[pieceIndex];
                     var sq = BitOperations.TrailingZeroCount(bitboard);
                     bitboard &= bitboard - 1;
 
@@ -50,27 +60,32 @@ public class MyBot : IChessBot
                     var file = sq & 7;
 
                     // Material
-                    score += pieceValues[pieceIndex];
+                    score_mg += pieceValues_mg[pieceIndex];
+                    score_eg += pieceValues_eg[pieceIndex];
 
-                    // Rank PST
-                    var rankScore = (sbyte)((pstRanks[pieceIndex] >> (rank * 8)) & 0xFF) * 2;
-                    score += rankScore;
+                    var rankScore = (sbyte)((pstRanks_mg[pieceIndex] >> (rank * 8)) & 0xFF) * 8;
+                    var fileScore = (sbyte)((pstFiles_mg[pieceIndex] >> (file * 8)) & 0xFF) * 8;
+                    score_mg += rankScore;
+                    score_mg += fileScore;
 
-                    // File PST
-                    var fileScore = (sbyte)((pstFiles[pieceIndex] >> (file * 8)) & 0xFF) * 2;
-                    score += fileScore;
+                    rankScore = (sbyte)((pstRanks_eg[pieceIndex] >> (rank * 8)) & 0xFF) * 8;
+                    fileScore = (sbyte)((pstFiles_eg[pieceIndex] >> (file * 8)) & 0xFF) * 8;
+                    score_eg += rankScore;
+                    score_eg += fileScore;
                 }
             }
 
-            score = -score;
+            score_mg = -score_mg;
+            score_eg = -score_eg;
         }
 
         if (!board.IsWhiteToMove)
         {
-            score = -score;
+            score_mg = -score_mg;
+            score_eg = -score_eg;
         }
 
-        return score;
+        return (score_mg * phase/24) + (score_eg * (24 - phase)/24);
     }
 
     private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, HashSet<ulong> repetitions, out Move bestMove)
