@@ -5,7 +5,7 @@ Engines tested against:
 | Vice | 1.1 | 2060 |
 
 ### 1.0
-Initial release - randoom legal mover
+Initial release - random legal mover
 
 53 tokens
 
