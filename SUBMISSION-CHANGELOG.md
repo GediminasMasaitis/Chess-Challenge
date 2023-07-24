@@ -199,3 +199,25 @@ Score of ChessChallenge vs ChessChallengeDev: 934 - 680 - 386  [0.564] 2000
 ...      White vs Black: 901 - 713 - 386  [0.547] 2000
 Elo difference: 44.4 +/- 13.8, LOS: 100.0 %, DrawRatio: 19.3 %
 ```
+
+### 1.10
+Check extensions
+
+616 tokens
+
+```
+info depth 1 cp 56 time 19 Move: 'g1f3'
+info depth 2 cp 0 time 20 Move: 'g1f3'
+info depth 3 cp 50 time 24 Move: 'b1c3'
+info depth 4 cp 0 time 76 Move: 'b1c3'
+info depth 5 cp 12 time 555 Move: 'b1a3'
+info depth 5 cp 0 time 4925 Move: 'b1c3'
+```
+
+```
+Score of CC-dev vs CC-master: 458 - 340 - 202  [0.559] 1000
+...      CC-dev playing White: 266 - 125 - 109  [0.641] 500
+...      CC-dev playing Black: 192 - 215 - 93  [0.477] 500
+...      White vs Black: 481 - 317 - 202  [0.582] 1000
+Elo difference: 41.2 +/- 19.3, LOS: 100.0 %, DrawRatio: 20.2 %
+```

@@ -99,7 +99,9 @@ public class MyBot : IChessBot
 
             if (bestScore > alpha)
                 alpha = bestScore;
-        }
+        }// else {
+        //    if(board.IsInCheck() && ply < 10) depth++;
+        //}
 
         // Loop over each legal move
         foreach (var move in moves)
