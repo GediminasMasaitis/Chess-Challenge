@@ -10,6 +10,19 @@ public class MyBot : IChessBot
     private const int Inf = 2000000;
     private const int Mate = 1000000;
 
+    struct TT_entry {
+        public ulong key;
+        public Move move;
+        public int depth, score;
+        public byte flag; // 1 = Upper, 2 = Lower, 3 = Exact
+        public TT_entry(ulong _key, Move _move, int _depth, int _score, byte _flag) {
+            key = _key; move = _move; depth = _depth; score = _score; flag = _flag;
+        }
+    }
+
+    const int entries = 1048576;
+    TT_entry[] TT = new TT_entry[entries];
+
     int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
 
     // PSTs are encoded with the following format:
@@ -68,7 +81,7 @@ public class MyBot : IChessBot
 
     private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, out Move bestMove)
     {
-        bestMove = Move.NullMove;
+        ulong tt_key = board.ZobristKey;
 
         // Repetition detection
         if (ply > 0 && board.IsRepeatedPosition())
@@ -82,21 +95,31 @@ public class MyBot : IChessBot
 
         var inQsearch = (depth <= 0);
 
-        // MVV-LVA ordering
-        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
+        TT_entry tte = TT[tt_key % entries];
 
+        if (ply > 0 && tte.key == tt_key && tte.depth >= depth
+            && (tte.flag == 3 || (tte.flag == 2 && tte.score >= beta) || (tte.flag == 1 && tte.score <= alpha)))
+            return tte.score;
+
+        var in_qsearch = (depth <= 0);
         var bestScore = -Inf;
-        var movesEvaluated = 0;
 
         if (inQsearch)
         {
-            bestScore = Evaluate(board);
-            if (bestScore >= beta)
-                return bestScore;
+            var staticEval = Evaluate(board);
+            if (staticEval >= beta)
+                return staticEval;
 
-            if (bestScore > alpha)
-                alpha = bestScore;
+            if (staticEval > alpha)
+                alpha = staticEval;
         }
+
+        // MVV-LVA ordering, TT move first
+        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == tte.move).ThenByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
+
+        var movesEvaluated = 0;
+        bestMove = tte.move;
+        byte flag = 1;
 
         // Loop over each legal move
         foreach (var move in moves)
@@ -124,29 +147,22 @@ public class MyBot : IChessBot
                 if (score > alpha)
                 {
                     alpha = score;
+                    flag = 3;
 
                     // If the move is better than our current beta, we can stop searching
                     if (score >= beta)
                     {
+                        flag = 2;
                         break;
                     }
                 }
             }
         }
 
-        if (!inQsearch && movesEvaluated == 0)
-        {
-            if (board.IsInCheck())
-            {
-                // Checkmate
-                return -Mate;
-            }
-            else
-            {
-                // Stalemate
-                return 0;
-            }
-        }
+        if (movesEvaluated == 0) 
+            return inQsearch ? bestScore : board.IsInCheck() ? -Mate : 0;
+
+        TT[tt_key % entries] = new TT_entry(tt_key, bestMove == Move.NullMove ? tte.move : bestMove, depth, bestScore, flag);
 
         return bestScore;
     }
