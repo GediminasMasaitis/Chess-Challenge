@@ -82,6 +82,7 @@ public class MyBot : IChessBot
     private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, out Move bestMove)
     {
         ulong tt_key = board.ZobristKey;
+        bestMove = Move.NullMove;
 
         // Repetition detection
         if (ply > 0 && board.IsRepeatedPosition())
@@ -162,7 +163,7 @@ public class MyBot : IChessBot
         if (movesEvaluated == 0) 
             return inQsearch ? bestScore : board.IsInCheck() ? -Mate : 0;
 
-        TT[tt_key % entries] = new TT_entry(tt_key, bestMove == Move.NullMove ? tte.move : bestMove, depth, bestScore, flag);
+        TT[tt_key % entries] = new TT_entry(tt_key, bestMove, depth, bestScore, flag);
 
         return bestScore;
     }
