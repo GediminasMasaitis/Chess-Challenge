@@ -103,16 +103,17 @@ public class MyBot : IChessBot
             return tte.score;
 
         var in_qsearch = (depth <= 0);
+        bestMove = tte.move;
         var bestScore = -Inf;
 
         if (inQsearch)
         {
-            var staticEval = Evaluate(board);
-            if (staticEval >= beta)
-                return staticEval;
+            bestScore = Evaluate(board);
+            if (bestScore >= beta)
+                return bestScore;
 
-            if (staticEval > alpha)
-                alpha = staticEval;
+            if (bestScore > alpha)
+                alpha = bestScore;
         }
 
         // MVV-LVA ordering, TT move first
