@@ -119,7 +119,6 @@ public class MyBot : IChessBot
         var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == tte.move).ThenByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
 
         var movesEvaluated = 0;
-        bestMove = tte.move;
         byte flag = 1;
 
         // Loop over each legal move
