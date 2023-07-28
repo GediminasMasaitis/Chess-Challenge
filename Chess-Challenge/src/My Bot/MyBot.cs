@@ -98,7 +98,7 @@ public class MyBot : IChessBot
 
         TT_entry tte = TT[tt_key % entries];
 
-        if (ply > 0 && tte.key == tt_key && tte.depth >= depth
+        if (ply > 0 && tte.key == tt_key && tte.depth >= depth && alpha == beta - 1
             && (tte.flag == 3 || (tte.flag == 2 && tte.score >= beta) || (tte.flag == 1 && tte.score <= alpha)))
             return tte.score;
 
@@ -121,6 +121,7 @@ public class MyBot : IChessBot
 
         var movesEvaluated = 0;
         byte flag = 1;
+        var score = -Inf;
 
         // Loop over each legal move
         foreach (var move in moves)
@@ -132,21 +133,28 @@ public class MyBot : IChessBot
             }
 
             board.MakeMove(move);
-            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, out _);
+            if (movesEvaluated == 0)
+                score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, out _);
+            else
+            {
+                score = -Search(board, timer, totalTime, ply + 1, depth - 1, -alpha - 1, -alpha, out _);
+                if (alpha < score && score < beta)
+                    score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, out _);
+            }
             board.UndoMove(move);
 
             // Count the number of moves we have evaluated for detecting mates and stalemates
             movesEvaluated++;
 
-            // If the move is better than our current best, update our best move
+            // If the move is better than our current best
             if (score > bestScore)
             {
                 bestScore = score;
-                bestMove = move;
 
-                // If the move is better than our current alpha, update alpha
+                // If the move is better than our current alpha, update alpha and best move
                 if (score > alpha)
                 {
+                    bestMove = move;
                     alpha = score;
                     flag = 3;
 
