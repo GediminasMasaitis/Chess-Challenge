@@ -36,11 +36,10 @@ public class MyBot : IChessBot
         int score = 0;
         for (var color = 0; color < 2; color++)
         {
-            var isWhite = color == 0;
             for (var piece = PieceType.Pawn; piece <= PieceType.King; piece++)
             {
                 var pieceIndex = (int)piece;
-                var bitboard = board.GetPieceBitboard(piece, isWhite);
+                var bitboard = board.GetPieceBitboard(piece, color == 0);
 
                 while (bitboard != 0)
                 {
@@ -48,9 +47,7 @@ public class MyBot : IChessBot
                     bitboard &= bitboard - 1;
 
                     if (color == 1)
-                    {
                         sq ^= 56;
-                    }
 
                     var rank = sq >> 3;
                     var file = sq & 7;
@@ -71,12 +68,7 @@ public class MyBot : IChessBot
             score = -score;
         }
 
-        if (!board.IsWhiteToMove)
-        {
-            score = -score;
-        }
-
-        return score;
+        return board.IsWhiteToMove ? score : -score;
     }
 
     private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, out Move bestMove)
@@ -86,20 +78,17 @@ public class MyBot : IChessBot
 
         // Repetition detection
         if (ply > 0 && board.IsRepeatedPosition())
-        {
             return 0;
-        }
 
         // If we are in check, we should search deeper
         if (board.IsInCheck())
             depth++;
 
         var inQsearch = (depth <= 0);
-
         TT_entry tte = TT[tt_key % entries];
 
         if (ply > 0 && tte.key == tt_key && tte.depth >= depth && alpha == beta - 1
-            && (tte.flag == 3 || (tte.flag == 2 && tte.score >= beta) || (tte.flag == 1 && tte.score <= alpha)))
+            && (tte.flag & ((tte.score >= beta) ? 2 : 1)) != 0)
             return tte.score;
 
         var in_qsearch = (depth <= 0);
@@ -128,9 +117,7 @@ public class MyBot : IChessBot
         {
             // If we are out of time, stop searching
             if (depth > 2 && timer.MillisecondsElapsedThisTurn * 30 > totalTime)
-            {
                 return bestScore;
-            }
 
             board.MakeMove(move);
             if (movesEvaluated == 0)
@@ -188,9 +175,7 @@ public class MyBot : IChessBot
 
             // If we are out of time, we cannot trust the move that was found during this iteration
             if (timer.MillisecondsElapsedThisTurn * 30 > totalTime)
-            {
                 break;
-            }
 
             bestMove = move;
 
