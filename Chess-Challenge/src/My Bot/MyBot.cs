@@ -177,7 +177,13 @@ public class MyBot : IChessBot
                     {
                         // If the move is not a capture, add a bonus to the quiets table
                         if (!move.IsCapture)
+                        {
+                            foreach (var quiet in moves)
+                                if (!quiet.IsCapture && quiet != move)
+                                    quietHistory[quiet.StartSquare.Index, quiet.TargetSquare.Index] -= depth * depth;
+
                             quietHistory[move.StartSquare.Index, move.TargetSquare.Index] += depth * depth;
+                        }
 
                         flag = 1; // Lower
 
