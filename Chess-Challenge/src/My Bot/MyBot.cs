@@ -55,10 +55,7 @@ public class MyBot : IChessBot
             score = -score;
         }
 
-        if (!board.IsWhiteToMove)
-            score = -score;
-
-        return score;
+        return board.IsWhiteToMove ? score : -score;
     }
 
     private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, long[,] quietHistory, bool nullAllowed, out Move bestMove)
